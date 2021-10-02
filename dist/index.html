@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+  <style>
+    html,
+    body {
+      background-color: black;
+      margin: 0;
+      padding: 0;
+      width: 100%;
+      height: 100%;
+    }
+    li{
+    color: white;
+    font-family: helvetica;
+    text-decoration: none;
+    }
+    li:hover {
+      cursor: pointer;
+    }
+    #main{
+      width:100%;
+    }
+    #files {
+      float:left;
+     width:60%;
+     height:100vh;
+   }
+    #monaco {
+      display: block;
+      margin-left:60%;
+      height: 100vh;
+      }
+  </style>
+  <head>
+    <script src='dev/vs/loader.js'></script>
+  </head>
+  <body>
+    <div id='main'>
+    <div id='files'>
+    </div>
+    <div id='monaco' >
+    </div>
+    </div>
+
+
+
+    <script>
+      let myMonaco = null;
+      require.config({paths: { vs: 'dev/vs'}});
+      require(['vs/editor/editor.main'], () => {
+        myMonaco = monaco.editor.create(document.getElementById("monaco"), {
+	    language: "javascript"
+      });
+
+      });
+      const pathDone = [''];
+      const div = document.getElementById("files");
+      const searchDirs = (path, parent) => {
+        if(pathDone.includes(path)){
+          return;
+        }
+        const dirsToSearch = fs.readDir(path || '', {dir: 11}).then((d) => {
+        const newList = document.createElement('ul');
+        d.forEach(myDocument => {
+          const newLi = document.createElement("li");
+          newLi.appendChild(document.createTextNode(myDocument.name));
+          newLi.addEventListener("click", (e) => {
+            if (e.shiftKey){ 
+              console.log("Shift pressed")}
+            else{
+              searchDirs(myDocument.path, newLi)}
+          });
+          newList.appendChild(newLi);
+        });
+        parent ? parent.appendChild(newList):div.appendChild(newList);
+        pathDone.push(path);
+      }, (reject) => {
+        const text = fs.readBinaryFile(path).then((f) => {
+          const text = String.fromCharCode.apply(null, f);
+          myMonaco.getModel().setValue(text);
+        });
+      });
+    }
+      const fs = window.__TAURI__.fs;
+    
+      searchDirs();
+
+    </script>
+  </body>
+</html>
